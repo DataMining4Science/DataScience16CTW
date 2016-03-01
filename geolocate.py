@@ -1,10 +1,24 @@
 from geopy.geocoders import Nominatim
 from geopy.geocoders import GeoNames
 import pandas as pd
+from numpy import mean
 
 def geocode(locator, gc_str):
     try:
-        return locator.geocode(gc_str, exactly_one=True)
+        locations = locator.geocode(gc_str, exactly_one=False)
+        # Check the range of responses (either a list of Locations or None*)
+        # If it's less than a threshold, use the mean latitude and longitude
+        # If not, return None
+        # *None will raise an exception and cause None to be returned
+        thresh = 0.005
+        lats = [l.latitude for l in locations]
+        lons = [l.longitude for l in locations]
+        if (max(lats) - min(lats) < thresh) and (max(lons) - min(lons) < thresh):
+            return mean(lats), mean(lons)
+        else:
+            return None
+    except KeyboardInterrupt:
+        exit(0)
     except:
         return None
 
@@ -14,7 +28,7 @@ def geocode_address(locator, series):
     """
     cols = ['Provider Street Address', 'Provider City', 'Provider State', 'Provider Zip Code']
     # Try first with everthing
-    address_str = ' '.join(str(series[col]) for col in cols)
+    address_str = ', '.join(str(series[col]) for col in cols)
     location = geocode(locator, address_str)
     # If it fails, try taking off the ZIP code
     if location is None:
@@ -26,7 +40,8 @@ def geocode_name(locator, series):
     """
     Return the Location of the provider in the given Series using the name
     """
-    name_str = series['Provider Name']
+    cols = ['Provider Name', 'Provider City', 'Provider State']
+    name_str = ', '.join(str(series[col]) for col in cols)
     return geocode(locator, name_str)
 
 if __name__ == '__main__':
@@ -61,8 +76,8 @@ if __name__ == '__main__':
         # Try by address first, then by name if that fails
         location = geocode_address(address_locator, row) or geocode_name(name_locator, row)
         if location is not None:
-            data.loc[index, 'Latitude'] = location.latitude
-            data.loc[index, 'Longitude'] = location.longitude
+            data.loc[index, 'Latitude'] = location[0]
+            data.loc[index, 'Longitude'] = location[1]
         else:
             fails += 1
             print row['Provider Id'], 'failed'

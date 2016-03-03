@@ -1,9 +1,12 @@
 import requests
 import pandas as pd
+import time
 from geopy.geocoders import GoogleV3
+from geopy.geocoders import Bing
 from numpy import mean
 
-google_maps_api_key = 
+google_maps_api_key = ''
+bing_maps_api_key = ''
 
 
 def geocode(locator, gc_str):
@@ -23,7 +26,8 @@ def geocode(locator, gc_str):
         #     return None
     except KeyboardInterrupt:
         exit(0)
-    except:
+    except Exception as e:
+    	print e
         return None
 
 def geocode_address(locator, series):
@@ -49,23 +53,24 @@ if __name__ == '__main__':
 
     # Load and join existing geocode data
     try:
-        geo_data = pd.read_csv('provider_geocodes.csv')
+        geo_data = pd.read_csv('provider_geocodes_google.csv')
         data = data.merge(geo_data, how='left')
     except IOError:
         data['Latitude'] = None
         data['Longitude'] = None
 
-    google_locator = GoogleV3(api_key=google_maps_api_key)
+    new_locator = GoogleV3(api_key=google_maps_api_key)
 
     i = 0
-    n = 500
+    n = 3000
     failsList = []
     print 'unknownsLeft: ', data.Latitude.isnull().sum()
     for index,row in data[data.Latitude.isnull()].iterrows():
         if i >= n:
             break
                     # Try by address first, then by name if that fails
-        location = geocode_address(google_locator, row)
+        start = time.time()
+        location = geocode_address(new_locator, row)
         if location is not None:
             data.loc[index, 'Latitude'] = location[0]
             data.loc[index, 'Longitude'] = location[1]
@@ -73,7 +78,11 @@ if __name__ == '__main__':
             failsList.append(row['Provider Id'])
             print row['Provider Id'], 'failed'
         i += 1
+        end = time.time()
+        remain = start + .1 - end
+        if remain > 0:
+            time.sleep(remain)
     print "fails: ",failsList
     print len(failsList), 'fails out of', i
 
-    data[['Provider Id', 'Latitude', 'Longitude']].sort_values('Provider Id').to_csv('provider_geocodes.csv', index=False)
+    data[['Provider Id', 'Latitude', 'Longitude']].sort_values('Provider Id').to_csv('provider_geocodes_google.csv', index=False)

@@ -66,7 +66,7 @@ if __name__ == '__main__':
     address_locator = Nominatim(country_bias='United States')
     name_locator = GeoNames(username='jkingery', country_bias='United States')
 
-    n = 1000
+    n = 2000
     i = 0
     fails = 0
     # Go through any rows with null Latitude (and thus Longitude) values
@@ -82,6 +82,6 @@ if __name__ == '__main__':
             fails += 1
             print row['Provider Id'], 'failed'
         i += 1
-    print fails, 'fails out of', n
+    print fails, 'fails out of', i
 
     data[['Provider Id', 'Latitude', 'Longitude']].sort_values('Provider Id').to_csv('provider_geocodes.csv', index=False)

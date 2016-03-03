@@ -1,5 +1,4 @@
-from geopy.geocoders import Nominatim
-from geopy.geocoders import GeoNames
+from geopy.geocoders import Nominatim, GeoNames, OpenCage
 import pandas as pd
 from numpy import mean
 
@@ -13,6 +12,25 @@ def geocode(locator, gc_str):
         thresh = 0.005
         lats = [l.latitude for l in locations]
         lons = [l.longitude for l in locations]
+        if (max(lats) - min(lats) < thresh) and (max(lons) - min(lons) < thresh):
+            return mean(lats), mean(lons)
+        else:
+            return None
+    except KeyboardInterrupt:
+        exit(0)
+    except:
+        return None
+
+def opencage_geocode(locator, gc_str):
+    try:
+        locations = locator.geocode(gc_str, exactly_one=False, country='USA')
+        # Check the range of responses (either a list of Locations or None*)
+        # If it's less than a threshold, use the mean latitude and longitude
+        # If not, return None
+        # *None will raise an exception and cause None to be returned
+        thresh = 0.005
+        lats = [l.latitude for l in locations if l.raw['confidence'] > 8]
+        lons = [l.longitude for l in locations if l.raw['confidence'] > 8]
         if (max(lats) - min(lats) < thresh) and (max(lons) - min(lons) < thresh):
             return mean(lats), mean(lons)
         else:
@@ -63,8 +81,9 @@ if __name__ == '__main__':
     data = data.sample(frac=1).reset_index(drop=True)
 
     # Create locators
-    address_locator = Nominatim(country_bias='United States')
-    name_locator = GeoNames(username='jkingery', country_bias='United States')
+#    address_locator = Nominatim(country_bias='United States')
+#    name_locator = GeoNames(username='jkingery', country_bias='United States')
+    opencage_locator = OpenCage('f3a8c411a5f467a0e85adc676fdfebbf', timeout=4)
 
     n = 2000
     i = 0
@@ -74,7 +93,12 @@ if __name__ == '__main__':
         if i >= n:
             break
         # Try by address first, then by name if that fails
-        location = geocode_address(address_locator, row) or geocode_name(name_locator, row)
+#        location = geocode_address(address_locator, row) or geocode_name(name_locator, row)
+
+        cols = ['Provider Street Address', 'Provider City', 'Provider State', 'Provider Zip Code']
+        address_str = ', '.join(str(row[col]) for col in cols)
+        location = opencage_geocode(opencage_locator, address_str)
+
         if location is not None:
             data.loc[index, 'Latitude'] = location[0]
             data.loc[index, 'Longitude'] = location[1]

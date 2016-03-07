@@ -15,7 +15,7 @@ def cleanData(data):
 	data['Average Covered Charges Num'] = data['Average Covered Charges'].apply(str_to_num)
 	data['Average Total Payments Num'] = data['Average Total Payments'].apply(str_to_num)
 	data['Average Medicare Payments Num'] = data['Average Medicare Payments'].apply(str_to_num)
-	data['DRG Code'] = data['DRG Definition'].apply(lambda x: float(x.split(" - ")[0]))
+	data['DRG Code'] = data['DRG Definition'].apply(lambda x: int(x.split(" - ")[0]))
 	geo_data = pd.read_csv('provider_geocodes_google.csv')
 	data = data.merge(geo_data, how='left')
 

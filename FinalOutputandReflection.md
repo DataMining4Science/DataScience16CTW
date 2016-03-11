@@ -4,7 +4,7 @@ Our initial assessment plan: "It should be assessed by how well we conducted our
 
 In order for you to assess us in this manner we think it would be heloful for you to look at the following files/notebooks:
 
-data_exploration_j.ipynb - This is were we explored the data
+data_exploration.ipynb - This is were we explored the data
 
 geolocate.py (initial attempt with open sources) and geolocate2.py (final attempt using google API) - thise was our code
 for geocoding the addresses of hospitals into latitude and longitude
